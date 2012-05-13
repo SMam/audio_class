@@ -1,10 +1,151 @@
 require './audio_class'
 
+rawsample_complete = "7@/          /  080604  //   0   30 ,  10   35 ,  20   40 ,          ,  30   45 ,          ,  40   50 ,          ,  50   55 ,          ,  60   60 ,          , -10   55 ,  -5   55 ,          ,   0   55 ,          ,   5   55 ,          ,  10   55 ,          ,  15   55 ,  4>  4<,  4>  4<,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,/P"
+rawsample_incomplete = ""
+rawsample_broken =""
+# raw sample usage
+#   d = Audiodata.new("raw", data_string)
+#   a = Audio.new(d)
+
+cooked_sample = {:ra => ["0","10","20","30","40","50","60"],
+                 :la => ["1","11","21","31","41","51","61"],
+                 :rm => ["b0","b10","b20","b30","b40","b50","b60"],
+                 :lm = ["w1","w11","w21","w31","w41","w51","w61"]}
+cs = cooked_sample # 長いのでエイリアス
+# cooked sample usage
+#   d = Audiodata.new("cooked", ra,la,ra,la,rm,lm,lm,rm)
+#   a = Audio.new(d)
+
+
 describe String do
   it do
     true.should be_true
   end
 end
+
+=begin
+describe Audio do
+  before do
+    bg_file = "./background.png"
+    output_file = "./output.png"
+    File::delete(output_file) if File::exists?(output_file)
+  end
+
+  context 'background.pngがない場合' do
+    File::delete(bg_file) if File::exists?(bg_file)
+    it '新しくbackground.pngを作ること' do
+      Audio.new
+      File::exists?(bg_file).should be_true
+    end
+  end
+
+  context '空データで出力した場合' do
+    before do
+      Audio.new.output(output_file)
+    end
+
+    it 'ファイルに出力されること' do
+      File::exists?(output_file).should be_true
+    end
+
+    it '出力は background.pngと同じサイズであること' do
+      File::stat(output_file).size.should == File::stat(bg_file).size
+    end
+  end
+
+  context 'Audioを正しいraw dataで作成した場合' do
+    before do
+      a = Audio.new(Audiodata.new("raw", rawsample_complete))
+      a.output(output_file)
+    end
+
+    it 'ファイル出力されること' do
+      File::exists?(output_file).should be_true
+    end
+
+    it 'mean4の出力が正しいこと' do
+      a.mean4.should == # what?
+    end
+
+    it 'reg_mean4(正規化したもの)の出力が正しいこと' do
+      a.reg_mean4.should == # what?
+    end
+
+    it 'mean3の出力が正しいこと' do
+      a.mean3.should == # what?
+    end
+
+    it 'mean6の出力が正しいこと' do
+      a.mean6.should == # what?
+    end
+
+    it 'put_rawdataでもともとのデータ文字列と同じものが出力されること' do
+      a.put_rawdata.should == rawsample_complete
+    end
+  end
+
+  context 'Audioをデータが足りないraw dataで作成した場合' do
+    before do
+      a = Audio.new(Audiodata.new("raw", rawsample_incomplete))
+      a.output(output_file)
+    end
+
+    it 'ファイル出力されること' do
+      File::exists?(output_file).should be_true
+    end
+
+    it 'mean4の出力が-100.0になること' do
+      a.mean4.should == -100.0
+    end
+
+    it 'mean6の出力が-100.0になること' do
+      a.mean6.should == -100.0
+    end
+
+    it 'put_rawdataでもともとのデータ文字列と同じものが出力されること' do
+      a.put_rawdata.should == rawsample_complete
+    end
+  end
+
+  context 'Audioをcooked dataで作成した場合' do
+    before do
+      a = Audio.new(Audiodata.new("cooked", \
+                                  cs[:ra],cs[:la],cs[:ra],cs[:la],\
+				  cs[:rm],cs[:lm],cs[:lm],cs[:rm]))
+      a.output(output_file)
+    end
+
+    it 'ファイル出力されること' do
+      File::exists?(output_file).should be_true
+    end
+
+    it 'mean4の出力が正しいこと' do
+      a.mean4.should == # what?
+    end
+
+    it 'reg_mean4(正規化したもの)の出力が正しいこと' do
+      a.reg_mean4.should == # what?
+    end
+  end
+end
+
+
+1) ファイル出力されること
+
+2) データ文字列が壊れていればエラーを出すこと
+
+3) mean4、mean6、mean3、reg_mean4正規化4分法の出力が正しいこと
+
+4) データが足りないときにはmean*はそれぞれ-100.0を出力すること
+
+5) put_rawdataでデータ文字列と同じものが出力されること
+
+6) outputでpngを出力できること
+
+cooked dataでも上の１〜６が可能であること 
+
+
+=end
 
 =begin
 array_spec.rb sample

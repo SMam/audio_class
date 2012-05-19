@@ -7,7 +7,7 @@ rawsample_complete = "7@/          /  080604  //   0   30 ,  10   35 ,  20   40
 #R   0  10  20  30  40  50  60
 #L  30  35  40  45  50  55  60
 
-rawsample_incomplete = ""
+rawsample_incomplete = "7@/          /  080604  //          ,          ,          ,          ,  30   45 ,          ,          ,          ,  50   55 ,          ,          ,          , -10   55 ,  -5   55 ,          ,   0   55 ,          ,   5   55 ,          ,  10   55 ,          ,  15   55 ,  4>  4<,  4>  4<,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,/C"
 rawsample_broken =""
 # raw sample usage
 #   d = Audiodata.new("raw", data_string)
@@ -95,28 +95,27 @@ describe Audio do
 
   context 'Audioをデータが足りないraw dataで作成した場合' do
     before do
-#      a = Audio.new(Audiodata.new("raw", rawsample_incomplete))
-#      a.draw(@output_file)
+      @a = Audio.new(Audiodata.new("raw", rawsample_incomplete))
+      @a.draw(@output_file)
     end
 
     it 'ファイル出力されること' do
-      pending("rawdataのサンプルができていない")
       File::exists?(@output_file).should be_true
     end
 
     it 'mean4の出力が-100.0になること' do
-      pending("rawdataのサンプルができていない")
-      a.mean4.should == -100.0
+      @a.mean4[:rt].should == -100.0
+      @a.mean4[:lt].should == -100.0
     end
 
     it 'mean6の出力が-100.0になること' do
-      pending("rawdataのサンプルができていない")
-      a.mean6.should == -100.0
+      @a.mean6[:rt].should == -100.0
+      @a.mean6[:lt].should == -100.0
     end
 
-    it 'put_rawdataでもともとのデータ文字列と同じものが出力されること' do
-      pending("rawdataのサンプルができていない")
-      a.put_rawdata.should == rawsample_complete
+    it 'put_rawdataでもともとのデータ文字列と同じdataが出力されること' do
+    # もとのデータ文字列(rawsample_complete)がput_rawdataの出力結果を含むこと
+      rawsample_incomplete.index(@a.put_rawdata).should be_true
     end
   end
 

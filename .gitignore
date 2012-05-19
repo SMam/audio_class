@@ -1,2 +1,3 @@
 backyard/
 *.png
+!images/*.png

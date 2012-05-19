@@ -19,19 +19,6 @@ Image_parts_location = "./images/" # とりあえず
 Overdraw_times = 2  # 重ね書きの回数．まずは2回，つまり1回前の検査までとする
 
 class Bitmap
- 
-#  RED =        0xff000000 #[255,0,0]
-#  BLUE =       0x0000ff00 #[0,0,255]
-#  RED_PRE0 =   0xff1e1e00 #[255,30,30]
-#  RED_PRE1 =   0xff5a5a00 #[255,90,90]
-#  BLUE_PRE0 =  0x1e1eff00 #[30,30,255]
-#  BLUE_PRE1 =  0x5a5aff00 #[90,90,255]
-#  BLACK =      0x00000000 #[0,0,0]
-#  BLACK_PRE0 = 0x1e1e1e00 #[30,30,30]
-#  BLACK_PRE1 = 0x5a5a5a00 #[90,90,90]
-#  WHITE =      0xffffff00 #[255,255,255]
-#  GRAY =       0xaaaaaa00 #[170,170,170]
-
   RED =        0xff0000ff #[255,0,0]
   BLUE =       0x0000ffff #[0,0,255]
   RED_PRE0 =   0xff1e1eff #[255,30,30]
@@ -112,7 +99,6 @@ class Bitmap
   end
 
   def output(filename)
-#    @png.save(filename, :fast_rgb)
     @png.save(filename, :fast_rgba)
   end
 end
@@ -206,10 +192,6 @@ class Background_bitmap < Bitmap
   end
 end
 
-#def make_background
-#  bg = Background_bitmap.new
-#  bg.output(Image_parts_location+"background.png")    # !!!!!!!!!!!!!!!
-#end
 #----------------------------------------#
 #class Audio < Bitmap
 class Audio < Background_bitmap
@@ -359,7 +341,6 @@ class Audio < Background_bitmap
           next
         end
 #        line_from = [X_pos[i],(threshold[i] / 10 * 24 + 69).prec_i]
-#                        # prec_i は float => integer のメソッド, 逆は prec_f
         line_from = [X_pos[i],(threshold[i] / 10 * 24 + 69).to_i]
                         # prec_i は float => integer のメソッド, 逆は prec_f #ruby1.9で廃止
         j = i + 1
@@ -397,8 +378,7 @@ class Audio < Background_bitmap
     draw_sub(@bone_rt, "latest")
     draw_sub(@bone_lt, "latest")
 
-output(filename)
-
+    output(filename)
   end
 
   def predraw(preexams) # preexams は以前のデータの配列，要素はAudiodata

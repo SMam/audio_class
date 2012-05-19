@@ -41,7 +41,7 @@ describe Audio do
   context '空データで出力した場合' do
     before do
       a = Audio.new(Audiodata.new("raw", rawsample_empty))
-      a.output(@output_file)
+      a.draw(@output_file)
     end
 
     it 'ファイルに出力されること' do
@@ -56,7 +56,7 @@ describe Audio do
   context 'Audioを正しいraw dataで作成した場合' do
     before do
       @a = Audio.new(Audiodata.new("raw", rawsample_complete))
-      @a.output(@output_file)
+      @a.draw(@output_file)
     end
 
     it 'ファイル出力されること' do
@@ -89,7 +89,6 @@ describe Audio do
     end
 
     it '出力は background.pngと異なったサイズであること' do
-      @a.output(@output_file)
       File::stat(@output_file).size.should_not == File::stat(@bg_file).size
     end
   end
@@ -97,7 +96,7 @@ describe Audio do
   context 'Audioをデータが足りないraw dataで作成した場合' do
     before do
 #      a = Audio.new(Audiodata.new("raw", rawsample_incomplete))
-#      a.output(@output_file)
+#      a.draw(@output_file)
     end
 
     it 'ファイル出力されること' do
@@ -126,7 +125,7 @@ describe Audio do
       @a = Audio.new(Audiodata.new("cooked", \
                                   cs[:ra],cs[:la],cs[:ra],cs[:la],\
 				  cs[:rm],cs[:lm],cs[:lm],cs[:rm]))
-      @a.output(@output_file)
+      @a.draw(@output_file)
     end
 
     it 'ファイル出力されること' do

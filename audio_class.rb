@@ -2,7 +2,7 @@
 #  Class Audio: 聴検データ取扱い用クラス
 #  Copyright 2007-2009 S Mamiya <MamiyaShn@gmail.com>
 #  0.20091107
-#  0.20120516 : chunky_PNGのgemを使用、ruby1.9対応
+#  0.20120519 : chunky_PNGのgemを使用、ruby1.9対応
 
 require 'chunky_png'
 require './AA79S.rb'
@@ -358,8 +358,10 @@ class Audio < Background_bitmap
           i += 1
           next
         end
-        line_from = [X_pos[i],(threshold[i] / 10 * 24 + 69).prec_i]
-                        # prec_i は float => integer のメソッド, 逆は prec_f
+#        line_from = [X_pos[i],(threshold[i] / 10 * 24 + 69).prec_i]
+#                        # prec_i は float => integer のメソッド, 逆は prec_f
+        line_from = [X_pos[i],(threshold[i] / 10 * 24 + 69).to_i]
+                        # prec_i は float => integer のメソッド, 逆は prec_f #ruby1.9で廃止
         j = i + 1
         while j < 7
           if not threshold[j]
@@ -373,7 +375,8 @@ class Audio < Background_bitmap
             i += 1
             break
           else
-            line_to = [X_pos[j],(threshold[j] / 10 * 24 + 69).prec_i]
+#            line_to = [X_pos[j],(threshold[j] / 10 * 24 + 69).prec_i]
+            line_to = [X_pos[j],(threshold[j] / 10 * 24 + 69).to_i]
             case audiodata[:side]
             when "Rt"
               line(line_from[0],line_from[1],line_to[0],line_to[1],rt_color,"line")
@@ -388,11 +391,14 @@ class Audio < Background_bitmap
     end
   end
 
-  def draw
+  def draw(filename)
     draw_sub(@air_rt, "latest")
     draw_sub(@air_lt, "latest")
     draw_sub(@bone_rt, "latest")
     draw_sub(@bone_lt, "latest")
+
+output(filename)
+
   end
 
   def predraw(preexams) # preexams は以前のデータの配列，要素はAudiodata
@@ -420,7 +426,7 @@ end
 
 #----------------------------------------#
 if ($0 == __FILE__)
-
+=begin
   datafile = "./Data/data_with_mask.dat"
   #datafile = "./Data/data1.dat"
   #datafile = "./Data/data2.dat"
@@ -441,8 +447,8 @@ if ($0 == __FILE__)
   puts "pre output"
   
   a.output("./test.ppm")    
+=end
 #----------
-=begin
   ra = ["0","10","20","30","40","50","60"]
   la = ["1","11","21","31","41","51","61"]
   rm = ["b0","b10","b20","b30","b40","b50","b60"]
@@ -454,8 +460,8 @@ if ($0 == __FILE__)
   p aa.reg_mean4
   p aa.put_rawdata
 
-  aa.draw
-  aa.output("./test.ppm")
-=end
+#  aa.draw
+#  aa.output("./test.png")
+aa.draw("./test2.png")
 
 end

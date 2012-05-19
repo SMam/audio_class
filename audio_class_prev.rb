@@ -2,48 +2,27 @@
 #  Class Audio: 聴検データ取扱い用クラス
 #  Copyright 2007-2009 S Mamiya <MamiyaShn@gmail.com>
 #  0.20091107
-#  0.20120516 : chunky_PNGのgemを使用、ruby1.9対応
 
-require 'chunky_png'
 require './AA79S.rb'
 
 RAILS_ROOT = ".." if not defined? RAILS_ROOT
-##############################Image_parts_location = RAILS_ROOT+"/lib/images/" # !!! 必要に応じて変更を !!!
-
-
-Image_parts_location = "./images/" # とりあえず
-
-
-
+Image_parts_location = RAILS_ROOT+"/lib/images/" # !!! 必要に応じて変更を !!!
 # railsの場合，directoryの相対表示の起点は rails/audiserv であるようだ
 Overdraw_times = 2  # 重ね書きの回数．まずは2回，つまり1回前の検査までとする
 
 class Bitmap
  
-#  RED =        0xff000000 #[255,0,0]
-#  BLUE =       0x0000ff00 #[0,0,255]
-#  RED_PRE0 =   0xff1e1e00 #[255,30,30]
-#  RED_PRE1 =   0xff5a5a00 #[255,90,90]
-#  BLUE_PRE0 =  0x1e1eff00 #[30,30,255]
-#  BLUE_PRE1 =  0x5a5aff00 #[90,90,255]
-#  BLACK =      0x00000000 #[0,0,0]
-#  BLACK_PRE0 = 0x1e1e1e00 #[30,30,30]
-#  BLACK_PRE1 = 0x5a5a5a00 #[90,90,90]
-#  WHITE =      0xffffff00 #[255,255,255]
-#  GRAY =       0xaaaaaa00 #[170,170,170]
-
-  RED =        0xff0000ff #[255,0,0]
-  BLUE =       0x0000ffff #[0,0,255]
-  RED_PRE0 =   0xff1e1eff #[255,30,30]
-  RED_PRE1 =   0xff5a5aff #[255,90,90]
-  BLUE_PRE0 =  0x1e1effff #[30,30,255]
-  BLUE_PRE1 =  0x5a5affff #[90,90,255]
-  BLACK =      0x000000ff #[0,0,0]
-  BLACK_PRE0 = 0x1e1e1eff #[30,30,30]
-  BLACK_PRE1 = 0x5a5a5aff #[90,90,90]
-  WHITE =      0xffffffff #[255,255,255]
-  GRAY =       0xaaaaaaff #[170,170,170]
-
+  RED = [255,0,0]
+  BLUE = [0,0,255]
+  RED_PRE0 = [255,30,30]
+  RED_PRE1 = [255,90,90]
+  BLUE_PRE0 = [30,30,255]
+  BLUE_PRE1 = [90,90,255]
+  BLACK = [0,0,0]
+  BLACK_PRE0 = [30,30,30]
+  BLACK_PRE1 = [90,90,90]
+  WHITE = [255,255,255]
+  GRAY = [170,170,170]
   CIRCLE_PTN = [[-5,-2],[-5,-1],[-5,0],[-5,1],[-5,2],[-4,-3],[-4,3],\
     [-3,-4],[-3,4],[-2,-5],[-2,5],[-1,-5],[-1,5],[0,-5],[0,5],[1,-5],[1,5],\
     [2,-5],[2,5],[3,-4],[3,4],[4,-3],[4,3],[5,-2],[5,-1],[5,0],[5,1],[5,2]]
@@ -62,44 +41,104 @@ class Bitmap
         :l_bracket => L_BRA_PTN, :r_scaleout => R_SCALEOUT_PTN, :l_scaleout => L_SCALEOUT_PTN}
 
   def initialize
-    @png = ChunkyPNG::Image.new(400,400,WHITE)
+    @header = "P6 400 400 255\n"  # PPM magic num、幅、高さ、画素値の最大値
+    prepare_buffer
+  end
+
+  def prepare_buffer
+    @buffer = String.new
+  end
+
+  def to_string(rgb)
+    s = String.new
+    rgb.each do |element|
+      s.concat(element)
+    end
+    return s
   end
 
   def point(x,y,rgb)
-    @png.set_pixel(x,y,rgb)
+    3.times do |i|
+      @buffer[(x + y * 400) * 3 + i] = rgb[i]
+    end
+  end
+
+  def swap(a,b)
+    return b,a
   end
 
   def line(x1,y1,x2,y2,rgb,dotted)
-    # Bresenhamアルゴリズムを用いた自力描画から変更
-    case dotted
-    when "line"
-      @png.line(x1,y1,x2,y2,rgb)
-    when "dot"
-      dx = x2 - x1
-      dy = y2 - y1
-      dot_length = 4
-      step = (Math::sqrt ( dx * dx + dy * dy )) / dot_length
-      sx = (dx / step).round
-      sy = (dy / step).round
-      c = rgb
-      x_line_end = y_line_end = false
-      x_to = x1
-      y_to = y1
-
-      until x_line_end && y_line_end do
-        x_from = x_to
-        y_from = y_to
-        if (x_to = x_from+sx) > x2
-          x_to = x2
-          x_line_end = true
+  # Bresenhamアルゴリズム http://dencha.ojaru.jp/programs_07/pg_graphic_07.html
+    if x1 < 0 or x1 > 399 or x2 < 0 or x2 > 399 or \
+       y1 < 0 or y1 > 399 or y2 < 0 or y2 > 399
+      return
+    end
+    dx = x2 - x1
+    dy = y2 - y1
+    if dx*dy < 0
+      a = -1        # 直線の傾きが負
+    else
+      a = 1         # 直線の傾きが正
+    end
+    dx = dx.abs
+    dy = dy.abs
+    if dotted == "dot"
+      d = 0
+    else
+      d = 8
+    end
+    if dx == 0 and dy == 0
+      point(x1,y1,rgb)
+      return
+    end
+    if dx > dy      # x を変化させて y を計算
+      if x1 > x2
+        x1, x2 = swap(x1,x2)
+        y1, y2 = swap(y1,y2)
+      end
+      y = y1
+      e = dx
+      for x in x1..x2
+        e += (2 * dy)
+        while e >= (2 * dx)
+          e -= (2 * dx)
+          y += a
         end
-        if (y_to = y_from+sy) > y2
-          y_to = y2
-          y_line_end = true
+        d += 1
+        case d
+        when 1..3
+          point(x,y,rgb)
+        when 5
+          d = 0
+        when 9
+          d = 8
+          point(x,y,rgb)
         end
-        @png.line(x_from,y_from,x_to,y_to,c)
-        c = (c == WHITE)? rgb: WHITE
-      end  
+      end
+    else      # y を変化させて x を計算
+      if y1 > y2
+        x1, x2 = swap(x1,x2)
+        y1, y2 = swap(y1,y2)
+      end
+      x = x1
+      e = dy
+      for y in y1..y2
+        e += (2 * dx)
+        while e >= (2 * dy)
+          e -= (2 * dy)
+          x += a
+        end
+        d += 1
+        case d
+        when 1..3
+          point(x,y,rgb)
+        when 5
+          d = 0
+        when 9
+          d = 8
+          point(x,y,rgb)
+        end
+      end
     end
   end
 
@@ -111,10 +150,14 @@ class Bitmap
     end
   end
 
+  def to_graph_string
+    return @header + @buffer
+  end
+
   def output(filename)
-#    @png.save(filename, :fast_rgb)
-    @png.save(filename, :fast_rgba)
-#    @png.save(filename, :best_compression)
+    File.open(filename,"wb") do |f|
+      f.puts to_graph_string
+    end
   end
 end
 
@@ -127,17 +170,25 @@ class Background_bitmap < Bitmap
     add_fonts
   end
 
+  def prepare_buffer
+    @buffer = to_string(WHITE) * (400*400)    # 160000 pixels
+  end
+
   def prepare_font
     font_name = ["0","1","2","3","4","5","6","7","8","9","k","Hz","dB","minus"]
     @font = Hash.new
-    font_name.each do |f|
-      @font[f] = Array.new
-      @font[f] << ChunkyPNG::Image.from_file(Image_parts_location+"#{f}.png")
-      case f
-      when "Hz","dB"
-        @font[f] << 2  # 文字幅の情報
-      else
-        @font[f] << 1
+    font_name.each do |fontname|
+      font_data = Array.new
+      File.open(Image_parts_location+"#{fontname}.ppm") do |f|
+        while l = f.gets
+          if not /^(\w|#)/ =~ l
+            for i in 0..(l.length/3)-1
+              j = i * 3
+              font_data << [l[j], l[j+1], l[j+2]]
+            end
+          end
+        end
+        @font[fontname] = font_data
       end
     end
   end
@@ -145,22 +196,22 @@ class Background_bitmap < Bitmap
   def draw_lines               # audiogramの縦横の線を引いている
     y1=30
     y2=348
-    line(50,y1,50,y2,GRAY,"line")
+    line(50,y1,50,y2,[170,170,170],"line")
     for x in 0..6
       x1=70+x*45
-      line(x1,y1,x1,y2,GRAY,"line")
+      line(x1,y1,x1,y2,[170,170,170],"line")
     end
-    line(360,y1,360,y2,GRAY,"line")
+    line(360,y1,360,y2,[170,170,170],"line")
     x1=50
     x2=360
-    line(x1,30,x2,30,GRAY,"line")
-    line(x1,45,x2,45,GRAY,"line")
-    line(x1,69,x2,69,BLACK,"line")
+    line(x1,30,x2,30,[170,170,170],"line")
+    line(x1,45,x2,45,[170,170,170],"line")
+    line(x1,69,x2,69,[0,0,0],"line")
     for y in 0..10
       y1=93+y*24
-      line(x1,y1,x2,y1,GRAY,"line")
+      line(x1,y1,x2,y1,[170,170,170],"line")
     end
-    line(x1,348,x2,348,GRAY,"line")
+    line(x1,348,x2,348,[170,170,170],"line")
   end
 
   def add_fonts
@@ -196,15 +247,23 @@ class Background_bitmap < Bitmap
 
   def put_font(x1,y1,fontname)
     return if not @font[fontname]
-    dx = @font[fontname][1] * 10
+    if @font[fontname].length == 150
+      dx = 10
+    else
+      dx = 20
+    end
     dy = 15
-    @png.compose!(@font[fontname][0],x1,y1)
+    for y in 0..dy-1
+      for x in 0..dx-1
+        point(x1+x,y1+y,@font[fontname][y*dx+x])\
+      end
+    end
   end
 end
 
 def make_background
   bg = Background_bitmap.new
-  bg.output(Image_parts_location+"background.png")    # !!!!!!!!!!!!!!!
+  bg.output(Image_parts_location+"background.ppm")    # !!!!!!!!!!!!!!!
 end
 #----------------------------------------#
 class Audio < Bitmap

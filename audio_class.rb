@@ -114,17 +114,21 @@ class Bitmap
   def output(filename)
 #    @png.save(filename, :fast_rgb)
     @png.save(filename, :fast_rgba)
-#    @png.save(filename, :best_compression)
   end
 end
 
 #----------------------------------------#
 class Background_bitmap < Bitmap
   def initialize
-    super()
-    prepare_font
-    draw_lines
-    add_fonts
+    if File.exist?(Image_parts_location+"background.png")
+      @png = ChunkyPNG::Image.from_file(Image_parts_location+"background.png")
+    else
+      @png = ChunkyPNG::Image.new(400,400,WHITE)
+      prepare_font
+      draw_lines
+      add_fonts
+      @png.save(Image_parts_location+"background.png", :fast_rgba)
+    end
   end
 
   def prepare_font
@@ -202,12 +206,13 @@ class Background_bitmap < Bitmap
   end
 end
 
-def make_background
-  bg = Background_bitmap.new
-  bg.output(Image_parts_location+"background.png")    # !!!!!!!!!!!!!!!
-end
+#def make_background
+#  bg = Background_bitmap.new
+#  bg.output(Image_parts_location+"background.png")    # !!!!!!!!!!!!!!!
+#end
 #----------------------------------------#
-class Audio < Bitmap
+#class Audio < Bitmap
+class Audio < Background_bitmap
   X_pos = [70,115,160,205,250,295,340]   # 各周波数別の横座標
 
   def initialize(audiodata)              # 引数はFormatted_data のインスタンス
@@ -217,17 +222,6 @@ class Audio < Bitmap
     @bone_rt = @audiodata.extract[:rb]
     @bone_lt = @audiodata.extract[:lb]
     super()
-  end
-
-  def prepare_buffer
-    make_background if not File.exist?(Image_parts_location+"background.ppm")
-    @buffer = String.new
-
-    File.open(Image_parts_location+"background.ppm") do |f|    # audiogram background 読み込み
-      data = f.read(15)
-      data = f.read
-      @buffer.concat(data)
-    end
   end
 
   def put_rawdata
@@ -252,7 +246,7 @@ class Audio < Bitmap
     if @air_rt[:data][2] and @air_rt[:data][3] and @air_rt[:data][4]
       r = {:data => @air_rt[:data], :scaleout => @air_rt[:scaleout]}
       for i in 2..4
-        if r[:scaleout][i]
+        if r[:scaleout][i] or r[:data][i] > 100.0
           r[:data][i] = 105.0
         end
       end
@@ -263,7 +257,7 @@ class Audio < Bitmap
     if @air_lt[:data][2] and @air_lt[:data][3] and @air_lt[:data][4]
       l = {:data => @air_lt[:data], :scaleout => @air_lt[:scaleout]}
       for i in 2..4
-        if l[:scaleout][i]
+        if l[:scaleout][i] or l[:data][i] > 100.0
           l[:data][i] = 105.0
         end
       end

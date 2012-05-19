@@ -1,8 +1,12 @@
 # coding:utf-8
 require './audio_class'
 
-rawsample_empty = "7@/          /  080604  //          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,/P"
+rawsample_empty = "7@/          /  080604  //          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,          ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,        ,/R"
 rawsample_complete = "7@/          /  080604  //   0   30 ,  10   35 ,  20   40 ,          ,  30   45 ,          ,  40   50 ,          ,  50   55 ,          ,  60   60 ,          , -10   55 ,  -5   55 ,          ,   0   55 ,          ,   5   55 ,          ,  10   55 ,          ,  15   55 ,  4>  4<,  4>  4<,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,        ,  4>  4<,/P"
+#  125 250 500  1k  2k  4k  8k
+#R   0  10  20  30  40  50  60
+#L  30  35  40  45  50  55  60
+
 rawsample_incomplete = ""
 rawsample_broken =""
 # raw sample usage
@@ -10,7 +14,7 @@ rawsample_broken =""
 #   a = Audio.new(d)
 
 cooked_sample = {:ra => ["0","10","20","30","40","50","60"],\
-                 :la => ["1","11","21","31","41","51","61"],\
+                 :la => ["1","11","21","31","110","51","61"],\
                  :rm => ["b0","b10","b20","b30","b40","b50","b60"],\
                  :lm => ["w1","w11","w21","w31","w41","w51","w61"]}
 cs = cooked_sample # 長いのでエイリアス
@@ -20,7 +24,7 @@ cs = cooked_sample # 長いのでエイリアス
 
 describe Audio do
   before :each do
-    @bg_file = "./background.png"
+    @bg_file = "./images/background.png"
     @output_file = "./output.png"
 
     File::delete(@output_file) if File::exists?(@output_file)
@@ -51,8 +55,8 @@ describe Audio do
 
   context 'Audioを正しいraw dataで作成した場合' do
     before do
-      a = Audio.new(Audiodata.new("raw", rawsample_complete))
-      a.output(@output_file)
+      @a = Audio.new(Audiodata.new("raw", rawsample_complete))
+      @a.output(@output_file)
     end
 
     it 'ファイル出力されること' do
@@ -60,23 +64,33 @@ describe Audio do
     end
 
     it 'mean4の出力が正しいこと' do
-      a.mean4.should == 0 # what?
+      @a.mean4[:rt].should == 30.0
+      @a.mean4[:lt].should == 45.0
     end
 
     it 'reg_mean4(正規化したもの)の出力が正しいこと' do
-      a.reg_mean4.should == 0 # what?
+      @a.reg_mean4[:rt].should == 30.0
+      @a.reg_mean4[:lt].should == 45.0
     end
 
     it 'mean3の出力が正しいこと' do
-      a.mean3.should == 0 # what?
+      @a.mean3[:rt].should == 30.0
+      @a.mean3[:lt].should == 45.0
     end
 
     it 'mean6の出力が正しいこと' do
-      a.mean6.should == 0 # what?
+      @a.mean6[:rt].should == 35.0
+      @a.mean6[:lt].should == 47.5
     end
 
-    it 'put_rawdataでもともとのデータ文字列と同じものが出力されること' do
-      a.put_rawdata.should == rawsample_complete
+    it 'put_rawdataでもともとのデータ文字列と同じdataが出力されること' do
+    # もとのデータ文字列(rawsample_complete)がput_rawdataの出力結果を含むこと
+      rawsample_complete.index(@a.put_rawdata).should be_true
+    end
+
+    it '出力は background.pngと異なったサイズであること' do
+      @a.output(@output_file)
+      File::stat(@output_file).size.should_not == File::stat(@bg_file).size
     end
   end
 
@@ -109,10 +123,10 @@ describe Audio do
 
   context 'Audioをcooked dataで作成した場合' do
     before do
-      a = Audio.new(Audiodata.new("cooked", \
+      @a = Audio.new(Audiodata.new("cooked", \
                                   cs[:ra],cs[:la],cs[:ra],cs[:la],\
 				  cs[:rm],cs[:lm],cs[:lm],cs[:rm]))
-      a.output(@output_file)
+      @a.output(@output_file)
     end
 
     it 'ファイル出力されること' do
@@ -120,11 +134,13 @@ describe Audio do
     end
 
     it 'mean4の出力が正しいこと' do
-      a.mean4.should == 0 # what?
+      @a.mean4[:rt].should == 30.0
+      @a.mean4[:lt].should == 48.25
     end
 
     it 'reg_mean4(正規化したもの)の出力が正しいこと' do
-      a.reg_mean4.should == 0 # what?
+      @a.reg_mean4[:rt].should == 30.0
+      @a.reg_mean4[:lt].should == 47.0
     end
   end
 end

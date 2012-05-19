@@ -170,7 +170,7 @@ class Audiodata
     i = 0
     bcc = 0
     separator_count = 0
-    while data.getbyte(0) != 2     # <stx>までスキップする ruby1.9
+    while data.getbyte(i) != 2     # <stx>までスキップする ruby1.9
       i += 1
     end
     i += 1

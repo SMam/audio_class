@@ -8,12 +8,9 @@ require 'chunky_png'
 require './AA79S.rb'
 
 RAILS_ROOT = ".." if not defined? RAILS_ROOT
-##############################Image_parts_location = RAILS_ROOT+"/lib/images/" # !!! 必要に応じて変更を !!!
 
-
+#Image_parts_location = RAILS_ROOT+"/lib/images/" # !!! 必要に応じて変更を !!!
 Image_parts_location = "./images/" # とりあえず
-
-
 
 # railsの場合，directoryの相対表示の起点は rails/audiserv であるようだ
 Overdraw_times = 2  # 重ね書きの回数．まずは2回，つまり1回前の検査までとする
@@ -56,8 +53,17 @@ class Bitmap
     @png.set_pixel(x,y,rgb)
   end
 
+  def swap(a,b)
+    return b,a
+  end
+
   def line(x1,y1,x2,y2,rgb,dotted)
     # Bresenhamアルゴリズムを用いた自力描画から変更
+    if x1 > x2  # x2がx1以上であることを保証
+      x1, x2 = swap(x1,x2)
+      y1, y2 = swap(y1,y2)
+    end
+    sign_modifier = (y1 < y2)? 1 : -1 # yが減少していく時(右上がり)の符号補正
     case dotted
     when "line"
       @png.line(x1,y1,x2,y2,rgb)
@@ -76,11 +82,12 @@ class Bitmap
       until x_line_end && y_line_end do
         x_from = x_to
         y_from = y_to
-        if (x_to = x_from+sx) > x2
+        if (x_to = x_from+sx) > x2  # x_from + sx が x_to を越えないように
           x_to = x2
           x_line_end = true
         end
-        if (y_to = y_from+sy) > y2
+        if (y_to = y_from+sy)*sign_modifier > y2*sign_modifier 
+	                            # y_from + sy が y_to を越えないように(符号補正つき)
           y_to = y2
           y_line_end = true
         end
